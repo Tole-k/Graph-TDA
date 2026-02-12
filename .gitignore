@@ -1,0 +1,10 @@
+# Project ignores
+
+# Regular ignores
+*.DS_Store
+
+# Python ignores
+*__pycache__*
+*.egg-info
+.venv
+build

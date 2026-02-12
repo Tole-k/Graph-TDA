@@ -1,0 +1,32 @@
+[project]
+name = "Graph-TDA"
+version = "0.1.0"
+description = "description"
+readme = "README.md"
+requires-python = ">=3.12"
+authors = [{name = "Dawid Siera, Anatol Kaczmarek"}]
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "ruff>=0.14.0",
+
+    # docs
+    "better-apidoc>=0.3.2",
+    "myst-nb>=1.2.0",
+    "pandoc>=2.4",
+    "sphinx>=8.2.3",
+    "sphinx-book-theme>=1.1.4",
+    "sphinx-copybutton>=0.5.2",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["Graph-TDA*"]
+
+[tool.pytest.ini_options]
+pythonpath = [
+  "."
+]
