@@ -106,7 +106,6 @@ def get_dataloader(
     names: list[str],
     labels: list[int],
     epsilons: list[float],
-    device,
     batch_size=16,
 ):
     temporal_dataset = get_dataset(
