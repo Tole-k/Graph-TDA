@@ -17,7 +17,7 @@ def dataset_to_signal(dataset, epsilons):
             (graph.nodes[edge[0]]["landmark"], graph.nodes[edge[1]]["landmark"])
             for edge in graph.edges
         ]
-        nodes_dict = {point: -1 for point in points}
+        nodes_dict = {point: 0 for point in points}
         for node_id in range(len(graph.nodes)):
             node = graph.nodes[node_id]
             nodes_dict[node["landmark"]] = node["size"]

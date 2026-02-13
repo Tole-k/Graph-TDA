@@ -1,20 +1,18 @@
-import torch
 import torch.nn as nn
 from torch_geometric_temporal.nn.recurrent import GConvLSTM
 from torch_geometric.nn import global_mean_pool
 
 
-class SequenceClassifier(nn.Module):
-    def __init__(self, in_channels, hidden_dim, num_classes):
+class GraphSequenceModel(nn.Module):
+    def __init__(self, in_channels, hidden_dim, out_dim):
         super().__init__()
         self.recurrent = GConvLSTM(in_channels, hidden_dim, K=2)
-        self.classifier = nn.Linear(hidden_dim, num_classes)
+        self.classifier = nn.Linear(hidden_dim, out_dim)
 
     def forward(self, dataset_batch):
         device = next(self.parameters()).device
         h_state = None
         c_state = None
-        temporal_embeddings = []
 
         for snapshot in dataset_batch:
             x = snapshot.x.to(device)
@@ -28,9 +26,7 @@ class SequenceClassifier(nn.Module):
             h_state, c_state = self.recurrent(
                 x, edge_index, edge_attr, h_state, c_state
             )
-            pooled = global_mean_pool(h_state, batch)
-            temporal_embeddings.append(pooled)
 
-        sequence_embeddings = torch.stack(temporal_embeddings, dim=1).mean(dim=1)
+        pooled = global_mean_pool(h_state, batch)
 
-        return self.classifier(sequence_embeddings)
+        return self.classifier(pooled)
