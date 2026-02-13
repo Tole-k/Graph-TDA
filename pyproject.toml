@@ -3,8 +3,11 @@ name = "Graph-TDA"
 version = "0.1.0"
 description = "description"
 readme = "README.md"
-requires-python = ">=3.12"
-authors = [{name = "Dawid Siera, Anatol Kaczmarek"}]
+requires-python = ">=3.13"
+authors = [
+    {name = "Dawid64",email = "dawid.siera@gmail.com"},
+    {name = "Tole-k", email = "anatol.kaczmarek@gmail.com"}
+]
 dependencies = [
     "palmerpenguins>=0.1.6",
     "pyballmapper>=0.3.7",
@@ -28,12 +31,13 @@ dev = [
     "sphinx-book-theme>=1.1.4",
     "sphinx-copybutton>=0.5.2",
 ]
+[tool.uv.extra-build-dependencies]
+torch-scatter = ["torch"]
+torch-sparse = ["torch"]
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["Graph-TDA*"]
 
 [tool.pytest.ini_options]
-pythonpath = [
-  "."
-]
+pythonpath = ["."]
