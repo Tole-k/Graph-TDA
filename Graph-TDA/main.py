@@ -115,7 +115,7 @@ dataloader = get_dataloader(
 )
 model = GraphSequenceModel(in_channels=1, hidden_dim=256, out_dim=17).to(device)
 optimizer = torch.optim.AdamW(model.parameters())
-criterion = nn.CrossEntropyLoss()
+criterion = nn.MSELoss()
 
 epochs = 10000
 best_loss = float("inf")
