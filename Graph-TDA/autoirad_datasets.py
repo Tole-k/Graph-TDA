@@ -60,6 +60,7 @@ def generate_training_parameters(
     datasets = []
     paths = list_dataset_files(datasets_dir)
     scores = []
+    names = []
 
     for path in tqdm(paths, total=len(paths)):
         dataset_name = os.path.splitext(os.path.basename(path))[0].replace("_R", "")
@@ -67,9 +68,10 @@ def generate_training_parameters(
         X = dataset.drop(dataset.columns[-1], axis=1).values
         if dataset_name in scores_df.index:
             scores.append(scores_df.loc[dataset_name].values.tolist())
+            names.append(dataset_name)
         else:
             print(f"Warning: No scores found for dataset {dataset_name}. Skipping.")
             continue
         datasets.append(X)
     print(f"Loaded {len(datasets)} datasets with scores.")
-    return datasets, scores
+    return datasets,names, scores

@@ -1,3 +1,6 @@
+import base64
+import hashlib
+import os
 from pyballmapper import BallMapper
 import numpy as np
 from torch_geometric.utils import from_networkx
@@ -8,23 +11,31 @@ from torch.utils.data import Dataset
 from tqdm import tqdm
 
 
-def dataset_to_signal(dataset, epsilons):
+def cached_dataset_to_signal(dataset, name, epsilons, cache_dir:str="cache"):
     snapshots = []
     points = list(range(len(dataset)))
+    if not os.path.exists(cache_dir):
+        os.makedirs(cache_dir)
     for eps in epsilons:
-        bm = BallMapper(X=dataset, eps=eps, order=points)
-        graph = bm.Graph
-        new_edges = [(graph.nodes[edge[0]]["landmark"], graph.nodes[edge[1]]["landmark"]) for edge in graph.edges]
-        nodes_dict = {point: 0 for point in points}
-        for node_id in range(len(graph.nodes)):
-            node = graph.nodes[node_id]
-            nodes_dict[node["landmark"]] = node["size"]
-        new_graph = nx.Graph()
-        for node_id, size in nodes_dict.items():
-            new_graph.add_node(node_id, x=size)
-        new_graph.add_edges_from(new_edges)
-        tg_graph = from_networkx(new_graph)
-        snapshots.append(tg_graph)
+        hash_name = short_hash(f"{name}_{eps}")
+        cache_path = os.path.join(cache_dir, f"{hash_name}.pt")
+        if os.path.exists(cache_path):
+            snapshots.append(torch.load(cache_path,weights_only=False))
+        else:
+            bm = BallMapper(X=dataset, eps=eps, order=points)
+            graph = bm.Graph
+            new_edges = [(graph.nodes[edge[0]]["landmark"], graph.nodes[edge[1]]["landmark"]) for edge in graph.edges]
+            nodes_dict = {point: 0 for point in points}
+            for node_id in range(len(graph.nodes)):
+                node = graph.nodes[node_id]
+                nodes_dict[node["landmark"]] = node["size"]
+            new_graph = nx.Graph()
+            for node_id, size in nodes_dict.items():
+                new_graph.add_node(node_id, x=size)
+            new_graph.add_edges_from(new_edges)
+            tg_graph = from_networkx(new_graph)
+            torch.save(tg_graph, cache_path)
+            snapshots.append(tg_graph)
     return snapshots
 
 
@@ -80,36 +91,24 @@ def temporal_collate_fn(batch):
         batches=batches,
     ), torch.tensor(labels)
 
+def short_hash(s: str, length=10) -> str:
+    h = hashlib.blake2b(s.encode(), digest_size=8).digest()
+    return base64.urlsafe_b64encode(h).decode("ascii")[:length]
+
 
 def get_dataset(
     datasets: list[np.ndarray],
+    names: list[str],
     scores: list[int],
     epsilons: list[float],
 ):
     sequences = []
-    for dataset in tqdm(datasets):
+    for dataset,name in tqdm(zip(datasets,names), total=len(datasets)):
         try:
-            sequence = dataset_to_signal(dataset=dataset, epsilons=epsilons)
+            sequence = cached_dataset_to_signal(dataset=dataset,name=name, epsilons=epsilons)
         except Exception as e:
             print(f"Error processing dataset: {e}")
             continue
         sequences.append(sequence)
     temporal_dataset = TemporalSequenceDataset(sequences, scores)
     return temporal_dataset
-
-
-def get_dataloader(
-    datasets: list[np.ndarray],
-    scores: list[int],
-    epsilons: list[float],
-    shuffle: bool = True,
-    batch_size: int = 16,
-):
-    temporal_dataset = get_dataset(datasets, scores=scores, epsilons=epsilons)
-    dataloader = torch.utils.data.DataLoader(
-        temporal_dataset,
-        batch_size=batch_size,
-        shuffle=shuffle,
-        collate_fn=temporal_collate_fn,
-    )
-    return dataloader
