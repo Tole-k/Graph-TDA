@@ -5,6 +5,7 @@ import networkx as nx
 from torch_geometric_temporal.signal import DynamicGraphTemporalSignalBatch
 import torch
 from torch.utils.data import Dataset
+from tqdm import tqdm
 
 
 def dataset_to_signal(dataset, epsilons):
@@ -13,10 +14,7 @@ def dataset_to_signal(dataset, epsilons):
     for eps in epsilons:
         bm = BallMapper(X=dataset, eps=eps, order=points)
         graph = bm.Graph
-        new_edges = [
-            (graph.nodes[edge[0]]["landmark"], graph.nodes[edge[1]]["landmark"])
-            for edge in graph.edges
-        ]
+        new_edges = [(graph.nodes[edge[0]]["landmark"], graph.nodes[edge[1]]["landmark"]) for edge in graph.edges]
         nodes_dict = {point: 0 for point in points}
         for node_id in range(len(graph.nodes)):
             node = graph.nodes[node_id]
@@ -85,36 +83,33 @@ def temporal_collate_fn(batch):
 
 def get_dataset(
     datasets: list[np.ndarray],
-    names: list[str],
-    labels: list[int],
+    scores: list[int],
     epsilons: list[float],
 ):
     sequences = []
-    for dataset, name in zip(datasets, names):
+    for dataset in tqdm(datasets):
         try:
             sequence = dataset_to_signal(dataset=dataset, epsilons=epsilons)
         except Exception as e:
-            print(f"Error processing dataset {name}: {e}")
+            print(f"Error processing dataset: {e}")
             continue
         sequences.append(sequence)
-    temporal_dataset = TemporalSequenceDataset(sequences, labels)
+    temporal_dataset = TemporalSequenceDataset(sequences, scores)
     return temporal_dataset
 
 
 def get_dataloader(
     datasets: list[np.ndarray],
-    names: list[str],
-    labels: list[int],
+    scores: list[int],
     epsilons: list[float],
-    batch_size=16,
+    shuffle: bool = True,
+    batch_size: int = 16,
 ):
-    temporal_dataset = get_dataset(
-        datasets, names=names, labels=labels, epsilons=epsilons
-    )
+    temporal_dataset = get_dataset(datasets, scores=scores, epsilons=epsilons)
     dataloader = torch.utils.data.DataLoader(
         temporal_dataset,
         batch_size=batch_size,
-        shuffle=True,
+        shuffle=shuffle,
         collate_fn=temporal_collate_fn,
     )
     return dataloader

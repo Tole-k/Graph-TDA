@@ -11,6 +11,7 @@ authors = [
 dependencies = [
     "palmerpenguins>=0.1.6",
     "pyballmapper>=0.3.7",
+    "pydataset>=0.2.0",
     "torch>=2.10.0",
     "torch-geometric>=2.7.0",
     "torch-geometric-temporal>=0.56.2",
